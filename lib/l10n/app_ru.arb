@@ -1,0 +1,148 @@
+{
+  "@@locale": "ru",
+  "helloRider": "Привет, {name}!",
+  "@helloRider": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rider": "Райдер",
+  "yourStats": "Ваша статистика",
+  "distance": "Дистанция",
+  "time": "Время",
+  "avgSpeed": "Сред. скорость",
+  "avgTime": "Сред. время",
+  "riderInfo": "Инфо",
+  "daysTracking": "{days} дней трекинга",
+  "@daysTracking": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noVehicle": "Нет ТС",
+  "addOneInProfile": "Добавьте в профиле",
+  "home": "Главная",
+  "feed": "Лента",
+  "add": "Добавить",
+  "profile": "Профиль",
+  "importing": "Импорт...",
+  "pleaseAddVehicle": "Пожалуйста, сначала добавьте ТС в Профиле.",
+  "errorParsingFile": "Ошибка парсинга файла: {error}",
+  "@errorParsingFile": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionDeleted": "Сессия удалена",
+  "noSessionsYet": "Сессий пока нет.",
+  "addFirstSession": "Добавьте первую сессию!",
+  "deleteSession": "Удалить сессию",
+  "deleteSessionConfirm": "Вы уверены, что хотите удалить эту сессию? Это действие нельзя отменить.",
+  "cancel": "ОТМЕНА",
+  "delete": "УДАЛИТЬ",
+  "unknownTrack": "Неизвестная трасса",
+  "trackedOn": "Дата заезда: {date}",
+  "@trackedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "importedOn": "Импортировано: {date}",
+  "@importedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "duration": "Длительность",
+  "routePts": "Точки",
+  "maxGatesAllowed": "Максимум 5 линий ворот.",
+  "sfGate": "S/F",
+  "sectorGate": "S{index}",
+  "@sectorGate": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "tapToDrawSF": "Нажмите 2 точки, чтобы нарисовать ворота Старт/Финиш",
+  "tapToCompleteGate": "Нажмите вторую точку, чтобы завершить линию ворот",
+  "gatesCount": "{count} ворот • Нажмите, чтобы добавить сектора",
+  "@gatesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newRace": "Новая гонка",
+  "save": "Сохранить",
+  "nameYourRace": "Назовите вашу гонку",
+  "undo": "Отмена",
+  "sessionNameUpdated": "Название сессии обновлено",
+  "enterSessionName": "Введите название сессии",
+  "mapAndStats": "Карта и Статы",
+  "sectorsAnalysis": "Анализ секторов",
+  "allLaps": "Все круги",
+  "lapIndex": "Круг {index}",
+  "@lapIndex": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionSummary": "Итоги сессии",
+  "totalTime": "Всего",
+  "bestLap": "Лучший круг",
+  "lapsCompleted": "Кругов завершено: {count}",
+  "@lapsCompleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "slow": "Медленно",
+  "mid": "Средне",
+  "fast": "Быстро",
+  "noLapsDetected": "Круги не обнаружены.\nУстановите маркеры Старт/Финиш и Сектора на экране настройки гонки.",
+  "profile": "Профиль",
+  "unknownUser": "Неизвестный пользователь",
+  "memberSince": "В системе с",
+  "garage": "Гараж",
+  "noBrand": "Без марки",
+  "noVehicle": "Нет транспорта",
+  "welcome": "Добро пожаловать в MotoLapTimer!",
+  "setupPrompt": "Давайте настроим ваш профиль и гараж для начала работы.",
+  "yourProfile": "Ваш профиль",
+  "nickname": "Никнейм",
+  "required": "Обязательно",
+  "firstName": "Имя",
+  "lastName": "Фамилия",
+  "firstVehicle": "Первый транспорт",
+  "brandHint": "Марка (напр., KTM, Yamaha)",
+  "modelHint": "Модель (напр., 250 SX-F, YZ250F)",
+  "year": "Год",
+  "mustBeNumber": "Должно быть числом",
+  "saveAndContinue": "Сохранить и продолжить",
+  "addVehicle": "Добавить транспорт",
+  "sectorAnalysisDeltaMode": "Дельта vs Лучший круг",
+  "sectorAnalysisAbsoluteMode": "Абсолютное время",
+  "lap": "Круг",
+  "lapTime": "Время круга",
+  "sector": "Сектор",
+  "lapShort": "К{index}",
+  "lastRide": "Последний заезд",
+  "favorite": "Избранное"
+}
