@@ -260,84 +260,80 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       totalTrackTimeMillis += lap.durationMillis;
     }
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (vehicleName.isNotEmpty &&
-                    vehicleName != '0 Unknown Vehicle')
-                  Text(
-                    vehicleName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange,
-                    ),
-                  ),
-                const SizedBox(height: 2),
+    return Column(
+      children: [
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (vehicleName.isNotEmpty && vehicleName != '0 Unknown Vehicle')
                 Text(
-                  DateFormat(
-                    'EEEE, MMMM d, yyyy - h:mm a',
-                  ).format(session.date),
-                  style: TextStyle(color: Colors.grey[600]),
+                  vehicleName,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepOrange,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
+              const SizedBox(height: 0),
+              Text(
+                DateFormat(
+                  'EEEE, MMMM d, yyyy - h:mm a',
+                ).format(session.date),
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _StatCircle(
+                    icon: Icons.straighten,
+                    label: AppLocalizations.of(context)!.distance,
+                    value:
+                        '${(session.totalDistanceMeters / 1000).toStringAsFixed(2)} km',
+                    color: Colors.lightGreen,
+                  ),
+                  _StatCircle(
+                    icon: Icons.timer,
+                    label: AppLocalizations.of(context)!.totalTime,
+                    value: _formatDuration(totalTrackTimeMillis),
+                    color: Colors.deepOrange,
+                  ),
+                  if (bestLapIdx != null)
                     _StatCircle(
-                      icon: Icons.straighten,
-                      label: AppLocalizations.of(context)!.distance,
-                      value:
-                          '${(session.totalDistanceMeters / 1000).toStringAsFixed(2)} km',
-                      color: Colors.lightGreen,
+                      icon: Icons.emoji_events,
+                      label: AppLocalizations.of(context)!.bestLap,
+                      value: laps[bestLapIdx].formattedDuration,
+                      color: Colors.purple,
                     ),
-                    _StatCircle(
-                      icon: Icons.timer,
-                      label: AppLocalizations.of(context)!.totalTime,
-                      value: _formatDuration(totalTrackTimeMillis),
-                      color: Colors.deepOrange,
-                    ),
-                    if (bestLapIdx != null)
-                      _StatCircle(
-                        icon: Icons.emoji_events,
-                        label: AppLocalizations.of(context)!.bestLap,
-                        value: laps[bestLapIdx].formattedDuration,
-                        color: Colors.purple,
-                      ),
-                  ],
-                ),
-                if (laps.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.lapsCompleted(laps.length),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
+                ],
+              ),
+              if (laps.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    AppLocalizations.of(context)!.lapsCompleted(laps.length),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
-          _buildLapSelector(session),
-          SizedBox(
-            height: 400, // Fixed height for map to avoid layout issues
-            child: _SessionMapWithZoom(
-              session: session,
-              selectedLapIndex: _selectedLapIndex,
-            ),
+        ),
+        _buildLapSelector(session),
+        Expanded(
+          child: _SessionMapWithZoom(
+            session: session,
+            selectedLapIndex: _selectedLapIndex,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -362,21 +358,21 @@ class _StatCircle extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 70,
-          height: 70,
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
           ),
-          child: Icon(icon, size: 30, color: color),
+          child: Icon(icon, size: 22, color: color),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+        // Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
       ],
     );
   }

@@ -29,9 +29,27 @@ class SessionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addSession(Session session) async {
-    await DatabaseHelper().insertSession(session);
-    await loadSessions();
+  Future<int> addSession(Session session) async {
+    final insertedId = await DatabaseHelper().insertSession(session);
+    final savedSession = Session(
+      id: insertedId,
+      vehicleId: session.vehicleId,
+      date: session.date,
+      importDate: session.importDate,
+      locationName: session.locationName,
+      durationMillis: session.durationMillis,
+      totalDistanceMeters: session.totalDistanceMeters,
+      routePoints: session.routePoints,
+      routeSpeeds: session.routeSpeeds,
+      routeTimestamps: session.routeTimestamps,
+      laps: session.laps,
+      sectorGates: session.sectorGates,
+    );
+
+    // Keep UI responsive: insert immediately, keep order newest-first.
+    _sessions = [savedSession, ..._sessions.where((s) => s.id != insertedId)];
+    notifyListeners();
+    return insertedId;
   }
 
   Future<void> deleteSession(int sessionId) async {

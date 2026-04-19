@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:moto_lap_timer/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../models/session.dart';
 import '../services/gps_parser_service.dart';
+import '../providers/session_provider.dart';
 import '../providers/vehicle_provider.dart';
 
 import 'main_feed_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'race_creation_screen.dart';
+import 'session_detail_screen.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -21,6 +24,8 @@ class RootScreen extends StatefulWidget {
 
 class _RootScreenState extends State<RootScreen> {
   int _currentIndex = 0;
+  bool _isImportInProgress = false;
+  int? _pendingAutoOpenSessionId;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +43,15 @@ class _RootScreenState extends State<RootScreen> {
       case 0:
         return const HomeScreen(); // The new home screen
       case 1:
-        return const MainFeedScreen(); // Will be updated to match the design
+        return MainFeedScreen(
+          autoOpenSessionId: _pendingAutoOpenSessionId,
+          onAutoOpenConsumed: () {
+            if (!mounted) return;
+            setState(() {
+              _pendingAutoOpenSessionId = null;
+            });
+          },
+        ); // Will be updated to match the design
       case 2:
         return Center(
           child: Text(l10n.importing),
@@ -51,6 +64,11 @@ class _RootScreenState extends State<RootScreen> {
   }
 
   void _onImportTapped() async {
+    if (_isImportInProgress) return;
+    setState(() {
+      _isImportInProgress = true;
+    });
+
     final vehicleProvider = context.read<VehicleProvider>();
     if (vehicleProvider.currentVehicle == null) {
       if (mounted) {
@@ -60,13 +78,20 @@ class _RootScreenState extends State<RootScreen> {
           ),
         );
       }
+      if (mounted) {
+        setState(() {
+          _isImportInProgress = false;
+        });
+      } else {
+        _isImportInProgress = false;
+      }
       return;
     }
 
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['gpx'],
+        allowedExtensions: ['gpx', 'txt'],
       );
 
       if (result != null && result.files.single.path != null) {
@@ -87,16 +112,45 @@ class _RootScreenState extends State<RootScreen> {
         }
 
         if (mounted) {
-          final result = await Navigator.of(context).push<bool>(
+          final result = await Navigator.of(context).push<int>(
             MaterialPageRoute(
               builder: (context) =>
                   RaceCreationScreen(parsedSession: parsedSession),
             ),
           );
 
-          if (result == true && mounted) {
+          if (result != null && mounted) {
             setState(() {
               _currentIndex = 1; // Switch to Feed tab
+              _pendingAutoOpenSessionId = result;
+            });
+
+            // After showing the feed (and allowing the new card animation),
+            // automatically open session details.
+            Future.delayed(const Duration(milliseconds: 2000), () async {
+              if (!mounted) return;
+              final targetId = _pendingAutoOpenSessionId;
+              if (targetId == null) return;
+
+              final provider = context.read<SessionProvider>();
+
+              Session? session;
+              for (final s in provider.sessions) {
+                if (s.id == targetId) {
+                  session = s;
+                  break;
+                }
+              }
+
+              session ??= await _loadAndFindSessionById(provider, targetId);
+              if (!mounted || session == null) return;
+
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SessionDetailScreen(session: session!),
+                ),
+              );
             });
           }
         }
@@ -110,6 +164,14 @@ class _RootScreenState extends State<RootScreen> {
             ),
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isImportInProgress = false;
+        });
+      } else {
+        _isImportInProgress = false;
       }
     }
   }
@@ -173,5 +235,16 @@ class _RootScreenState extends State<RootScreen> {
         ),
       ),
     );
+  }
+
+  Future<Session?> _loadAndFindSessionById(
+    SessionProvider provider,
+    int sessionId,
+  ) async {
+    await provider.loadSessions();
+    for (final s in provider.sessions) {
+      if (s.id == sessionId) return s;
+    }
+    return null;
   }
 }

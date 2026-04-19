@@ -352,6 +352,7 @@ class _RaceCreationScreenState extends State<RaceCreationScreen> {
         }
 
         return DropdownButtonFormField<int>(
+          isExpanded: true,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -509,12 +510,13 @@ class _RaceCreationScreenState extends State<RaceCreationScreen> {
                       sectorGates: _gates,
                     );
 
-                    await context.read<SessionProvider>().addSession(
+                    final insertedId =
+                        await context.read<SessionProvider>().addSession(
                       sessionToSave,
                     );
                     await context.read<UserProvider>().refreshGlobalStats();
                     if (mounted) {
-                      Navigator.of(context).pop(true);
+                      Navigator.of(context).pop(insertedId);
                     }
                   },
           ),
@@ -565,9 +567,9 @@ class _RaceCreationScreenState extends State<RaceCreationScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(flex: 2, child: _buildVehicleDropdown()),
+                    Expanded(flex: 6, child: _buildVehicleDropdown()),
                     const SizedBox(width: 8),
-                    Expanded(flex: 3, child: _buildDateTimePicker()),
+                    Expanded(flex: 4, child: _buildDateTimePicker()),
                   ],
                 ),
                 const SizedBox(height: 12),

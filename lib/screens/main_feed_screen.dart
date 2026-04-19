@@ -10,7 +10,14 @@ import '../models/session.dart';
 import 'session_detail_screen.dart';
 
 class MainFeedScreen extends StatefulWidget {
-  const MainFeedScreen({super.key});
+  final int? autoOpenSessionId;
+  final VoidCallback? onAutoOpenConsumed;
+
+  const MainFeedScreen({
+    super.key,
+    this.autoOpenSessionId,
+    this.onAutoOpenConsumed,
+  });
 
   @override
   State<MainFeedScreen> createState() => _MainFeedScreenState();
@@ -18,12 +25,41 @@ class MainFeedScreen extends StatefulWidget {
 
 class _MainFeedScreenState extends State<MainFeedScreen> {
   int? _vehicleFilterId; // null = all vehicles
+  int? _pendingSessionId;
+  bool _playNewSessionAnimation = false;
 
   @override
   void initState() {
     super.initState();
+    _pendingSessionId = widget.autoOpenSessionId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SessionProvider>().loadSessions();
+      _maybeAnimateAndAutoOpen();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant MainFeedScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.autoOpenSessionId != oldWidget.autoOpenSessionId) {
+      _pendingSessionId = widget.autoOpenSessionId;
+      _playNewSessionAnimation = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _maybeAnimateAndAutoOpen();
+      });
+    }
+  }
+
+  void _maybeAnimateAndAutoOpen() {
+    final targetId = _pendingSessionId;
+    if (targetId == null || !mounted) return;
+
+    // Consume immediately so switching tabs doesn't retrigger.
+    widget.onAutoOpenConsumed?.call();
+
+    // Kick animation on next build.
+    setState(() {
+      _playNewSessionAnimation = true;
     });
   }
 
@@ -79,35 +115,35 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
         return Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 6),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  DropdownButton<int?>(
-                    value: _vehicleFilterId,
-                    underline: const SizedBox.shrink(),
-                    onChanged: (value) {
-                      setState(() => _vehicleFilterId = value);
-                    },
-                    items: [
-                      DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text(AppLocalizations.of(context)!.allVehicles),
-                      ),
-                      ...vehicleProvider.vehicles
-                          .where((v) => v.id != null)
-                          .map(
-                            (v) => DropdownMenuItem<int?>(
-                              value: v.id!,
-                              child: Text(v.displayName),
-                            ),
-                          ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.fromLTRB(24, 18, 24, 6),
+            //   child: Row(
+            //     children: [
+            //       const Spacer(),
+            //       DropdownButton<int?>(
+            //         value: _vehicleFilterId,
+            //         underline: const SizedBox.shrink(),
+            //         onChanged: (value) {
+            //           setState(() => _vehicleFilterId = value);
+            //         },
+            //         items: [
+            //           DropdownMenuItem<int?>(
+            //             value: null,
+            //             child: Text(AppLocalizations.of(context)!.allVehicles),
+            //           ),
+            //           ...vehicleProvider.vehicles
+            //               .where((v) => v.id != null)
+            //               .map(
+            //                 (v) => DropdownMenuItem<int?>(
+            //                   value: v.id!,
+            //                   child: Text(v.displayName),
+            //                 ),
+            //               ),
+            //         ],
+            //       ),
+            //     ],
+            //   ),
+            // ),
             Expanded(
               child: ListView.builder(
                 padding:
@@ -115,7 +151,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 itemCount: sessions.length,
                 itemBuilder: (context, index) {
                   final session = sessions[index];
-                  return Dismissible(
+                  final isNewlyAdded =
+                      _pendingSessionId != null && session.id == _pendingSessionId;
+
+                  final card = Dismissible(
                     key: Key('session_${session.id}'),
                     direction: DismissDirection.endToStart,
                     background: Container(
@@ -168,6 +207,22 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                       _deleteSession(session);
                     },
                     child: _buildSessionCard(context, session, vehicleProvider),
+                  );
+
+                  if (!isNewlyAdded) return card;
+
+                  return AnimatedSlide(
+                    offset: _playNewSessionAnimation
+                        ? Offset.zero
+                        : const Offset(0, 0.08),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedOpacity(
+                      opacity: _playNewSessionAnimation ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeOut,
+                      child: card,
+                    ),
                   );
                 },
               ),
