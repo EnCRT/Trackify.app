@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
+import '../providers/user_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../models/session.dart';
 import '../models/vehicle.dart';
@@ -171,20 +172,15 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     );
 
     if (shouldDelete == true && context.mounted) {
-      final vehicleProvider = context.read<VehicleProvider>();
-      if (vehicleProvider.currentVehicle != null) {
-        await context.read<SessionProvider>().deleteSession(
-          widget.session.id!,
-          vehicleProvider.currentVehicle!.id!,
+      await context.read<SessionProvider>().deleteSession(widget.session.id!);
+      await context.read<UserProvider>().refreshGlobalStats();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.sessionDeleted),
+          ),
         );
-        if (context.mounted) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.sessionDeleted),
-            ),
-          );
-        }
       }
     }
   }

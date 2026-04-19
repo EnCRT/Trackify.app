@@ -40,6 +40,7 @@
     }
   },
   "sessionDeleted": "Сессия удалена",
+  "allVehicles": "Все ТС",
   "noSessionsYet": "Сессий пока нет.",
   "addFirstSession": "Добавьте первую сессию!",
   "deleteSession": "Удалить сессию",

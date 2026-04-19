@@ -72,6 +72,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDeleted => 'Session deleted';
 
   @override
+  String get allVehicles => 'All vehicles';
+
+  @override
   String get noSessionsYet => 'No sessions yet.';
 
   @override

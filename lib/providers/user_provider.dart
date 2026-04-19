@@ -28,4 +28,19 @@ class UserProvider with ChangeNotifier {
     await DatabaseHelper().insertUser(user);
     await loadUser();
   }
+
+  Future<void> refreshGlobalStats() async {
+    final user = _currentUser;
+    if (user?.id == null) return;
+
+    final stats = await DatabaseHelper().getSessionsAggregate();
+    await DatabaseHelper().updateUserStats(
+      userId: user!.id!,
+      totalDistanceMeters: stats.totalDistanceMeters,
+      totalTimeMillis: stats.totalTimeMillis,
+      sessionsCount: stats.sessionsCount,
+    );
+
+    await loadUser();
+  }
 }

@@ -19,6 +19,7 @@
   "pleaseAddVehicle": "Будь ласка, спочатку додайте ТЗ у Профілі.",
   "errorParsingFile": "Помилка парсингу файлу: {error}",
   "sessionDeleted": "Сесію видалено",
+  "allVehicles": "Всі ТЗ",
   "noSessionsYet": "Сесій поки немає.",
   "addFirstSession": "Додайте першу сесію!",
   "deleteSession": "Видалити сесію",

@@ -72,6 +72,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get sessionDeleted => 'Сесію видалено';
 
   @override
+  String get allVehicles => 'Всі ТЗ';
+
+  @override
   String get noSessionsYet => 'Сесій поки немає.';
 
   @override

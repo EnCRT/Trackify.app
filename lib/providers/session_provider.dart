@@ -9,6 +9,16 @@ class SessionProvider with ChangeNotifier {
   List<Session> get sessions => _sessions;
   bool get isLoading => _isLoading;
 
+  Future<void> loadSessions() async {
+    _isLoading = true;
+    notifyListeners();
+
+    _sessions = await DatabaseHelper().getSessions();
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
   Future<void> loadSessionsForVehicle(int vehicleId) async {
     _isLoading = true;
     notifyListeners();
@@ -21,16 +31,16 @@ class SessionProvider with ChangeNotifier {
 
   Future<void> addSession(Session session) async {
     await DatabaseHelper().insertSession(session);
-    await loadSessionsForVehicle(session.vehicleId);
+    await loadSessions();
   }
 
-  Future<void> deleteSession(int sessionId, int currentVehicleId) async {
+  Future<void> deleteSession(int sessionId) async {
     await DatabaseHelper().deleteSession(sessionId);
-    await loadSessionsForVehicle(currentVehicleId);
+    await loadSessions();
   }
 
   Future<void> updateSession(Session session) async {
     await DatabaseHelper().updateSession(session);
-    await loadSessionsForVehicle(session.vehicleId);
+    await loadSessions();
   }
 }

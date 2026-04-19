@@ -34,10 +34,10 @@ class GpsParserService {
       final time = DateTime.parse(timeStr);
 
       // 10Hz Downsampling (minimum 100ms between points)
-      if (previousTime != null &&
-          time.difference(previousTime).inMilliseconds < 100) {
-        continue;
-      }
+      // if (previousTime != null &&
+      //     time.difference(previousTime).inMilliseconds < 100) {
+      //   continue;
+      // }
 
       final lat = double.parse(trkpt.getAttribute('lat')!);
       final lon = double.parse(trkpt.getAttribute('lon')!);
@@ -82,8 +82,9 @@ class GpsParserService {
     final durationMillis = endTime.difference(startTime).inMilliseconds.abs();
 
     // TODO: Extract location name properly (e.g. reverse geocoding or file name)
-    final locationName =
-        "Заезд ${startTime.toIso8601String().substring(0, 10)}";
+    final mm = startTime.month.toString().padLeft(2, '0');
+    final dd = startTime.day.toString().padLeft(2, '0');
+    final locationName = "Заезд $mm-$dd";
 
     return Session(
       vehicleId: vehicleId,
@@ -179,8 +180,9 @@ class GpsParserService {
     }
 
     final durationMillis = endTime.difference(startTime).inMilliseconds.abs();
-    final locationName =
-        "TXT Import ${startTime.toIso8601String().substring(0, 10)}";
+    final mm = startTime.month.toString().padLeft(2, '0');
+    final dd = startTime.day.toString().padLeft(2, '0');
+    final locationName = "Заезд $mm-$dd";
 
     return Session(
       vehicleId: vehicleId,

@@ -43,7 +43,7 @@ lib/
 │   ├── vehicle.dart
 │   ├── session.dart
 │   ├── lap.dart           — Также содержит SectorData
-│   └── lap_sector.dart    — Отдельная сущность сектора (для lap_sectors таблицы)
+│   └── (LapSector удалён) — сектора хранятся в `lapsJson` внутри `sessions`
 ├── providers/             — Управление состоянием (ChangeNotifier)
 │   ├── user_provider.dart
 │   ├── vehicle_provider.dart
@@ -142,20 +142,7 @@ crossingPointIndex: int    // индекс пересечения ворот
 
 ---
 
-### 4.5 LapSector (отдельная таблица — частично используется)
-```dart
-id?: int
-sessionId: int
-lapNumber: int
-sectorNumber: int    // 0 = полный круг, 1+ = секторы
-timeMillis: int
-distanceMeters: double
-isBest: bool
-```
-
----
-
-## 5. База данных (SQLite v8)
+## 5. База данных (SQLite v9)
 
 ### Схема таблиц
 
@@ -192,19 +179,7 @@ CREATE TABLE sessions (
   FOREIGN KEY (vehicleId) REFERENCES vehicles(id) ON DELETE CASCADE
 );
 
-CREATE TABLE lap_sectors (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  sessionId INTEGER NOT NULL,
-  lapNumber INTEGER NOT NULL,
-  sectorNumber INTEGER NOT NULL,
-  timeMillis INTEGER NOT NULL,
-  distanceMeters REAL NOT NULL,
-  isBest INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY (sessionId) REFERENCES sessions(id) ON DELETE CASCADE
-);
 ```
-
-> **Замечание:** `lapsJson` и `sectorGatesJson` хранятся как JSON прямо в таблице `sessions`. Таблица `lap_sectors` создана, но **пока не используется** — её данные дублируются в `lapsJson`.
 
 ### История миграций
 | Версия | Изменение |
@@ -217,6 +192,7 @@ CREATE TABLE lap_sectors (
 | v6 | `routeTimestampsJson` в sessions |
 | v7 | `sectorGatesJson` в sessions |
 | v8 | `isFavorite` в vehicles |
+| v9 | удалена неиспользуемая таблица `lap_sectors` |
 
 ---
 
@@ -252,7 +228,7 @@ CREATE TABLE lap_sectors (
 8. Возврат `List<Lap>`
 
 **Ограничения:**
-- Макс. ворот: 5 (1 S/F + 4 секторных)
+- Макс. ворот: 5 (1 S/F + 4 секторных) (TODO: для платной версии Про: 12, Анлим: безлимит )
 - `gateWidthMeters = 30.0` (расчётная ширина ворот)
 - `debounceDistanceMeters = 15.0`
 
@@ -655,11 +631,9 @@ CREATE TABLE lap_sectors (
 ### ❌ Не реализовано / Нужно доделать
 
 #### Критически важные
-
-- [ ] **TXT в FilePicker:** в `allowedExtensions` только `['gpx']`, TXT не выбрать через UI
-- [ ] **Таблица `lap_sectors` не используется** — данные секторов дублируются в `lapsJson` и в `lap_sectors`. Нужно либо удалить таблицу, либо использовать последовательно
-- [ ] **Геокодинг:** `locationName` формируется как `"Заезд YYYY-MM-DD"` — нужен reverse geocoding или ввод вручную при импорте
-- [ ] **Переключение мотоцикла в Feed:** при смене `currentVehicle` сессии не перезагружаются автоматически; `loadSessionsForVehicle` вызывается только в `initState`
+- [x] **Таблица `lap_sectors` удалена** — секторы хранятся в `sessions.lapsJson` (источник истины) и больше не дублируются в отдельной таблице
+- [x] **Геокодинг:** `locationName` формируется как `"Заезд MM-DD"` — нужен reverse geocoding или ввод вручную при импорте
+- [x] **Feed показывает все заезды + фильтр по ТС:** лента грузит все сессии и позволяет отфильтровать по выбранному транспорту, не завязываясь на `currentVehicle`
 
 #### Функциональные улучшения
 

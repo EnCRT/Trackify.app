@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/session.dart';
 import '../providers/session_provider.dart';
+import '../providers/user_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../services/lap_calculator_service.dart';
 
@@ -511,6 +512,7 @@ class _RaceCreationScreenState extends State<RaceCreationScreen> {
                     await context.read<SessionProvider>().addSession(
                       sessionToSave,
                     );
+                    await context.read<UserProvider>().refreshGlobalStats();
                     if (mounted) {
                       Navigator.of(context).pop(true);
                     }

@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/vehicle.dart';
 import '../models/session.dart';
-import '../models/lap_sector.dart';
 import '../models/user.dart';
 
 class DatabaseHelper {
@@ -24,7 +23,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'moto_lap_timer.db');
     return await openDatabase(
       path,
-      version: 8, // Bumped to 8 for favorite vehicle
+      version: 10, // v10: store user global stats
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -37,7 +36,10 @@ class DatabaseHelper {
         nickname TEXT Not NULL,
         firstName TEXT Not NULL,
         lastName TEXT Not NULL,
-        joinDate TEXT Not NULL
+        joinDate TEXT Not NULL,
+        totalDistanceMeters REAL NOT NULL DEFAULT 0,
+        totalTimeMillis INTEGER NOT NULL DEFAULT 0,
+        sessionsCount INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
@@ -68,19 +70,6 @@ class DatabaseHelper {
         FOREIGN KEY (vehicleId) REFERENCES vehicles (id) ON DELETE CASCADE
       )
     ''');
-
-    await db.execute('''
-      CREATE TABLE lap_sectors(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sessionId INTEGER Not NULL,
-        lapNumber INTEGER Not NULL,
-        sectorNumber INTEGER Not NULL,
-        timeMillis INTEGER Not NULL,
-        distanceMeters REAL Not NULL,
-        isBest INTEGER Not NULL DEFAULT 0,
-        FOREIGN KEY (sessionId) REFERENCES sessions (id) ON DELETE CASCADE
-      )
-    ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -92,7 +81,10 @@ class DatabaseHelper {
           nickname TEXT Not NULL,
           firstName TEXT Not NULL,
           lastName TEXT Not NULL,
-          joinDate TEXT Not NULL
+          joinDate TEXT Not NULL,
+          totalDistanceMeters REAL NOT NULL DEFAULT 0,
+          totalTimeMillis INTEGER NOT NULL DEFAULT 0,
+          sessionsCount INTEGER NOT NULL DEFAULT 0
         )
       ''');
     }
@@ -134,6 +126,20 @@ class DatabaseHelper {
         ALTER TABLE vehicles ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0
       ''');
     }
+    if (oldVersion < 9) {
+      await db.execute('DROP TABLE IF EXISTS lap_sectors');
+    }
+    if (oldVersion < 10) {
+      await db.execute('''
+        ALTER TABLE users ADD COLUMN totalDistanceMeters REAL NOT NULL DEFAULT 0
+      ''');
+      await db.execute('''
+        ALTER TABLE users ADD COLUMN totalTimeMillis INTEGER NOT NULL DEFAULT 0
+      ''');
+      await db.execute('''
+        ALTER TABLE users ADD COLUMN sessionsCount INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
   }
 
   // --- Users ---
@@ -152,6 +158,44 @@ class DatabaseHelper {
       return User.fromMap(maps.first);
     }
     return null;
+  }
+
+  Future<void> updateUserStats({
+    required int userId,
+    required double totalDistanceMeters,
+    required int totalTimeMillis,
+    required int sessionsCount,
+  }) async {
+    final db = await database;
+    await db.update(
+      'users',
+      {
+        'totalDistanceMeters': totalDistanceMeters,
+        'totalTimeMillis': totalTimeMillis,
+        'sessionsCount': sessionsCount,
+      },
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+  }
+
+  Future<({double totalDistanceMeters, int totalTimeMillis, int sessionsCount})>
+      getSessionsAggregate() async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT
+        COUNT(*) as sessionsCount,
+        COALESCE(SUM(totalDistanceMeters), 0) as totalDistanceMeters,
+        COALESCE(SUM(durationMillis), 0) as totalTimeMillis
+      FROM sessions
+    ''');
+
+    final row = result.first;
+    return (
+      totalDistanceMeters: (row['totalDistanceMeters'] as num).toDouble(),
+      totalTimeMillis: (row['totalTimeMillis'] as num).toInt(),
+      sessionsCount: (row['sessionsCount'] as num).toInt(),
+    );
   }
 
   // --- Vehicles ---
@@ -220,22 +264,5 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [session.id],
     );
-  }
-
-  // --- Lap Sectors ---
-  Future<int> insertLapSector(LapSector lapSector) async {
-    Database db = await database;
-    return await db.insert('lap_sectors', lapSector.toMap());
-  }
-
-  Future<List<LapSector>> getLapSectorsForSession(int sessionId) async {
-    Database db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'lap_sectors',
-      where: 'sessionId = ?',
-      whereArgs: [sessionId],
-      orderBy: 'lapNumber ASC, sectorNumber ASC',
-    );
-    return List.generate(maps.length, (i) => LapSector.fromMap(maps[i]));
   }
 }

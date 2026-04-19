@@ -19,6 +19,7 @@
   "pleaseAddVehicle": "Please add a vehicle in Profile first.",
   "errorParsingFile": "Error parsing file: {error}",
   "sessionDeleted": "Session deleted",
+  "allVehicles": "All vehicles",
   "noSessionsYet": "No sessions yet.",
   "addFirstSession": "Add a new session to see it here!",
   "deleteSession": "Delete Session",

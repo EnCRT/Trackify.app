@@ -214,6 +214,12 @@ abstract class AppLocalizations {
   /// **'Сессия удалена'**
   String get sessionDeleted;
 
+  /// No description provided for @allVehicles.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все ТС'**
+  String get allVehicles;
+
   /// No description provided for @noSessionsYet.
   ///
   /// In ru, this message translates to:

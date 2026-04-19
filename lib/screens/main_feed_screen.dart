@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/session_provider.dart';
+import '../providers/user_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../models/session.dart';
 import 'session_detail_screen.dart';
@@ -16,31 +17,23 @@ class MainFeedScreen extends StatefulWidget {
 }
 
 class _MainFeedScreenState extends State<MainFeedScreen> {
+  int? _vehicleFilterId; // null = all vehicles
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final vehicleProvider = context.read<VehicleProvider>();
-      if (vehicleProvider.currentVehicle != null) {
-        context.read<SessionProvider>().loadSessionsForVehicle(
-          vehicleProvider.currentVehicle!.id!,
-        );
-      }
+      context.read<SessionProvider>().loadSessions();
     });
   }
 
   void _deleteSession(Session session) async {
-    final vehicleProvider = context.read<VehicleProvider>();
-    if (vehicleProvider.currentVehicle != null) {
-      await context.read<SessionProvider>().deleteSession(
-        session.id!,
-        vehicleProvider.currentVehicle!.id!,
+    await context.read<SessionProvider>().deleteSession(session.id!);
+    await context.read<UserProvider>().refreshGlobalStats();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.sessionDeleted)),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.sessionDeleted)),
-        );
-      }
     }
   }
 
@@ -54,7 +47,13 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           );
         }
 
-        if (provider.sessions.isEmpty) {
+        final sessions = _vehicleFilterId == null
+            ? provider.sessions
+            : provider.sessions
+                .where((s) => s.vehicleId == _vehicleFilterId)
+                .toList();
+
+        if (sessions.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -78,63 +77,102 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-          itemCount: provider.sessions.length,
-          itemBuilder: (context, index) {
-            final session = provider.sessions[index];
-            return Dismissible(
-              key: Key('session_${session.id}'),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: Colors.red[400],
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 30.0),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.white,
-                  size: 36,
-                ),
-              ),
-              confirmDismiss: (direction) async {
-                return await showDialog<bool>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(AppLocalizations.of(context)!.deleteSession),
-                      content: Text(
-                        AppLocalizations.of(context)!.deleteSessionConfirm,
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 18, 24, 6),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  DropdownButton<int?>(
+                    value: _vehicleFilterId,
+                    underline: const SizedBox.shrink(),
+                    onChanged: (value) {
+                      setState(() => _vehicleFilterId = value);
+                    },
+                    items: [
+                      DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text(AppLocalizations.of(context)!.allVehicles),
                       ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: Text(
-                            AppLocalizations.of(context)!.cancel,
-                            style: const TextStyle(color: Colors.grey),
+                      ...vehicleProvider.vehicles
+                          .where((v) => v.id != null)
+                          .map(
+                            (v) => DropdownMenuItem<int?>(
+                              value: v.id!,
+                              child: Text(v.displayName),
+                            ),
                           ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: Text(
-                            AppLocalizations.of(context)!.delete,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              onDismissed: (direction) {
-                _deleteSession(session);
-              },
-              child: _buildSessionCard(context, session, vehicleProvider),
-            );
-          },
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                itemCount: sessions.length,
+                itemBuilder: (context, index) {
+                  final session = sessions[index];
+                  return Dismissible(
+                    key: Key('session_${session.id}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.red[400],
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 30.0),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    ),
+                    confirmDismiss: (direction) async {
+                      return await showDialog<bool>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title:
+                                Text(AppLocalizations.of(context)!.deleteSession),
+                            content: Text(
+                              AppLocalizations.of(context)!.deleteSessionConfirm,
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(false),
+                                child: Text(
+                                  AppLocalizations.of(context)!.cancel,
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
+                                child: Text(
+                                  AppLocalizations.of(context)!.delete,
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    onDismissed: (direction) {
+                      _deleteSession(session);
+                    },
+                    child: _buildSessionCard(context, session, vehicleProvider),
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );

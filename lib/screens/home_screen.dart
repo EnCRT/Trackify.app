@@ -6,8 +6,22 @@ import '../providers/session_provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/time_utils.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<SessionProvider>().loadSessions();
+      await context.read<UserProvider>().refreshGlobalStats();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,24 +34,15 @@ class HomeScreen extends StatelessWidget {
     final vehicle = vehicleProvider.currentVehicle;
     final sessions = sessionProvider.sessions;
 
-    // Calculate stats
-    double totalDistanceMeters = 0;
-    int totalTimeMillis = 0;
-    for (var s in sessions) {
-      totalDistanceMeters += s.totalDistanceMeters;
-      totalTimeMillis += s.durationMillis;
-    }
+    final double totalDistanceMeters = user?.totalDistanceMeters ?? 0;
+    final int totalTimeMillis = user?.totalTimeMillis ?? 0;
+    final int sessionsCount = user?.sessionsCount ?? 0;
 
-    double avgSpeedKmh = 0;
-    if (totalTimeMillis > 0) {
-      final hours = totalTimeMillis / 3600000;
-      final km = totalDistanceMeters / 1000;
-      avgSpeedKmh = km / hours;
-    }
-
-    int avgTimeMillis = sessions.isNotEmpty
-        ? totalTimeMillis ~/ sessions.length
+    final double avgSpeedKmh = totalTimeMillis > 0
+        ? (totalDistanceMeters / 1000.0) / (totalTimeMillis / 3600000.0)
         : 0;
+
+    final int avgTimeMillis = sessionsCount > 0 ? totalTimeMillis ~/ sessionsCount : 0;
 
     int daysInApp = user != null
         ? DateTime.now().difference(user.joinDate).inDays
