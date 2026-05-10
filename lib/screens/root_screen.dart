@@ -14,6 +14,7 @@ import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'race_creation_screen.dart';
 import 'session_detail_screen.dart';
+import 'tracker_sync_screen.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -53,10 +54,11 @@ class _RootScreenState extends State<RootScreen> {
           },
         ); // Will be updated to match the design
       case 2:
+      case 3:
         return Center(
           child: Text(l10n.importing),
         ); // Shouldn't be reached ideally
-      case 3:
+      case 4:
         return const ProfileScreen(); // Profile Screen
       default:
         return const HomeScreen();
@@ -176,6 +178,101 @@ class _RootScreenState extends State<RootScreen> {
     }
   }
 
+  void _onBleSyncTapped() async {
+    if (_isImportInProgress) return;
+    final vehicleProvider = context.read<VehicleProvider>();
+    if (vehicleProvider.currentVehicle == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.pleaseAddVehicle),
+          ),
+        );
+      }
+      return;
+    }
+
+    final File? downloadedFile = await Navigator.of(context).push<File?>(
+      MaterialPageRoute(builder: (context) => const TrackerSyncScreen()),
+    );
+
+    if (downloadedFile != null && mounted) {
+      setState(() {
+        _isImportInProgress = true;
+      });
+
+      try {
+        final parser = GpsParserService();
+        int vehicleId = vehicleProvider.currentVehicle!.id!;
+        
+        dynamic parsedSession;
+        if (downloadedFile.path.endsWith('.gpx')) {
+          parsedSession = await parser.parseGpxFile(downloadedFile, vehicleId);
+        } else {
+          parsedSession = await parser.parseTxtFile(downloadedFile, vehicleId);
+        }
+
+        if (mounted) {
+          final result = await Navigator.of(context).push<int>(
+            MaterialPageRoute(
+              builder: (context) =>
+                  RaceCreationScreen(parsedSession: parsedSession),
+            ),
+          );
+
+          if (result != null && mounted) {
+            setState(() {
+              _currentIndex = 1; // Switch to Feed tab
+              _pendingAutoOpenSessionId = result;
+            });
+
+            Future.delayed(const Duration(milliseconds: 2000), () async {
+              if (!mounted) return;
+              final targetId = _pendingAutoOpenSessionId;
+              if (targetId == null) return;
+
+              final provider = context.read<SessionProvider>();
+
+              Session? session;
+              for (final s in provider.sessions) {
+                if (s.id == targetId) {
+                  session = s;
+                  break;
+                }
+              }
+
+              session ??= await _loadAndFindSessionById(provider, targetId);
+              if (!mounted || session == null) return;
+
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SessionDetailScreen(session: session!),
+                ),
+              );
+            });
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.errorParsingFile(e.toString()),
+              ),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isImportInProgress = false;
+          });
+        }
+      }
+    }
+  }
+
   Widget _buildBottomNavigationBar(AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -196,6 +293,8 @@ class _RootScreenState extends State<RootScreen> {
           currentIndex: _currentIndex,
           onTap: (index) {
             if (index == 2) {
+              _onBleSyncTapped();
+            } else if (index == 3) {
               _onImportTapped();
             } else {
               setState(() {
@@ -220,6 +319,11 @@ class _RootScreenState extends State<RootScreen> {
               icon: const Icon(Icons.list_alt_outlined, size: 32),
               activeIcon: const Icon(Icons.list_alt, size: 32),
               label: l10n.feed,
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.bluetooth_outlined, size: 32),
+              activeIcon: Icon(Icons.bluetooth, size: 32),
+              label: 'BT Sync',
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.add_circle_outline, size: 32),
